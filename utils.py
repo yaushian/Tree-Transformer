@@ -123,7 +123,6 @@ class data_utils():
                 if w in self.new_vocab:
                     word_list.append(self.new_vocab[w])
                 else:
-                    print(w)
                     word_list.append(self.unk_id)
             self.training_data.append(word_list)
 
