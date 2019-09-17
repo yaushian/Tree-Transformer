@@ -96,25 +96,9 @@ class GroupAttention(nn.Module):
         neibor_attn = F.softmax(scores, dim=-1)
         neibor_attn = torch.sqrt(neibor_attn*neibor_attn.transpose(-2,-1) + 1e-9)
         neibor_attn = prior + (1. - prior)*neibor_attn
-        #neibor_attn = torch.clamp(prior + neibor_attn, min=1e-5, max=1.0)
 
         t = torch.log(neibor_attn + 1e-9).masked_fill(a==0, 0).matmul(tri_matrix)
         g_attn = tri_matrix.matmul(t).exp().masked_fill((tri_matrix.int()-b)==0, 0)     
         g_attn = g_attn + g_attn.transpose(-2, -1) + neibor_attn.masked_fill(b==0, 1e-9)
-        
-        """
-        t = tri_matrix.matmul(neibor_attn.masked_fill(a==0, 0))
-        g_attn = t.masked_fill((tri_matrix.int()-b)==0, 1).cumprod(2).masked_fill((tri_matrix.int()-b)==0, 0)
-        g_attn = g_attn + g_attn.transpose(-2, -1) + neibor_attn.masked_fill(b==0, 1e-9)
-        """
-
-        """
-        t = tri_matrix.matmul(neibor_attn.masked_fill(a==0, 0))
-        t = t.masked_fill((tri_matrix.int()-b)==0, 1)
-        print('tt',t[0,:10,:10])
-        g_attn = t.cumprod(2).masked_fill((tri_matrix.int()-b)==0, 0)
-        print('gg',g_attn[0,:10,:10])
-        g_attn = g_attn + g_attn.transpose(-2, -1)
-        """
         
         return g_attn,neibor_attn
