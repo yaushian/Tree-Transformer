@@ -19,13 +19,13 @@ We use BERT tokenizer from [PyTorch-Transformers](https://github.com/huggingface
 
 
 ## Training
-For grammar induction training:
-```python3 main.py -train -model_dir [model_dir] -num_step 70000```
+For grammar induction training:  
+```python3 main.py -train -model_dir [model_dir] -num_step 70000```  
 The default setting achieves F1 of approximatedly 49.1 on WSJ test set. The training file 'data/train.txt' includes all WSJ data except 'WSJ_22 and WSJ_23'.   
 
 ## Evaluation
-For grammar induction testing:
-```python3 main.py -test -model_dir [model_dir]```
+For grammar induction testing:  
+```python3 main.py -test -model_dir [model_dir]```  
 The code creates a result directory in model_dir. The result directory includes 'bracket.json' and 'tree.txt'. File 'bracket.json' contains the brackets of trees outputted from the model and they can be used for evaluating F1. The ground truth brackets of testing data can be obtained by using code of [on-lstm](https://github.com/yikangshen/Ordered-Neurons). File 'tree.txt' contains the parse trees.   
 
 ## Acknowledgements
