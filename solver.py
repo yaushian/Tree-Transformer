@@ -8,34 +8,30 @@ from models import *
 from utils import *
 from parse import *
 import random
-from bert_optimizer import *
+from bert_optimizer import BertAdam
 
 class Solver():
     def __init__(self, args):
         self.args = args
-        self.model_dir = make_save_dir(args.model_dir)
-        self.data_utils = data_utils(args)
-        self.model = self._make_model(args.vanilla, self.data_utils.vocab_size, 10)
 
+        self.model_dir = make_save_dir(args.model_dir)
         if not os.path.exists(os.path.join(self.model_dir,'code')):
             os.makedirs(os.path.join(self.model_dir,'code'))
-        if not self.args.test:
-            subprocess.call('cp ./*.py '+ os.path.join(self.model_dir,'code'), shell=True)
+        
+        self.data_utils = data_utils(args)
+        self.model = self._make_model(self.data_utils.vocab_size, 10)
 
         self.test_vecs = None
         self.test_masked_lm_input = []
 
 
-    def _make_model(self, vanilla, vocab_size, N=10, 
+    def _make_model(self, vocab_size, N=10, 
             d_model=512, d_ff=2048, h=8, dropout=0.1):
+            
+            "Helper: Construct a model from hyperparameters."
             c = copy.deepcopy
-
-            if vanilla:
-                group_attn = None
-            else:
-                group_attn = GroupAttention(d_model)
-
             attn = MultiHeadedAttention(h, d_model)
+            group_attn = GroupAttention(d_model)
             ff = PositionwiseFeedForward(d_model, d_ff, dropout)
             position = PositionalEncoding(d_model, dropout)
             word_embed = nn.Sequential(Embeddings(d_model, vocab_size), c(position))
@@ -52,26 +48,25 @@ class Solver():
         if self.args.load:
             path = os.path.join(self.model_dir, 'model.pth')
             self.model.load_state_dict(torch.load(path)['state_dict'])
-        
         tt = 0
         for name, param in self.model.named_parameters():
             if param.requires_grad:
+                #print(name)
                 ttt = 1
                 for  s in param.data.size():
                     ttt *= s
                 tt += ttt
         print('total_param_num:',tt)
 
-        optim = torch.optim.Adam(self.model.parameters(), lr=1e-4, betas=(0.9, 0.98), eps=1e-9)        
+        data_yielder = self.data_utils.train_data_yielder()
+        optim = torch.optim.Adam(self.model.parameters(), lr=1e-4, betas=(0.9, 0.98), eps=1e-9)
         #optim = BertAdam(self.model.parameters(), lr=1e-4)
         
-        data_yielder = self.data_utils.train_data_yielder()
         total_loss = []
         start = time.time()
         total_step_time = 0.
         total_masked = 0.
         total_token = 0.
-        min_ppx = 150.
 
         for step in range(self.args.num_step):
             self.model.train()
@@ -81,24 +76,29 @@ class Solver():
             out,break_probs = self.model.forward(batch['input'].long(), batch['input_mask'])
             
             loss = self.model.masked_lm_loss(out, batch['target_vec'].long())
-            
             optim.zero_grad()
             loss.backward()
             torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.5)
             optim.step()
+
             total_loss.append(loss.detach().cpu().numpy())
+
             total_step_time += time.time() - step_start
             
             if step % 200 == 1:
                 elapsed = time.time() - start
                 print("Epoch Step: %d Loss: %f Total Time: %f Step Time: %f" %
                         (step, np.mean(total_loss), elapsed, total_step_time))
+                self.model.train()
+                print()
                 start = time.time()
                 total_loss = []
                 total_step_time = 0.
-            
-            if step % 1000 == 10:
+
+
+            if step % 1000 == 0:
                 print('saving!!!!')
+                
                 model_name = 'model.pth'
                 state = {'step': step, 'state_dict': self.model.state_dict()}
                 torch.save(state, os.path.join(self.model_dir, model_name))
@@ -108,7 +108,6 @@ class Solver():
         path = os.path.join(self.model_dir, 'model.pth')
         self.model.load_state_dict(torch.load(path)['state_dict'])
         self.model.eval()
-
         txts = get_test(self.args.test_path)
 
         vecs = [self.data_utils.text2id(txt, 60) for txt in txts]
@@ -116,11 +115,8 @@ class Solver():
         self.test_vecs = cc(vecs).long()
         self.test_masks = cc(masks)
         self.test_txts = txts
-        
-        if not self.args.vanilla:
-            self.write_parse_tree()
 
-        
+        self.write_parse_tree()
 
 
     def write_parse_tree(self, threshold=0.8):

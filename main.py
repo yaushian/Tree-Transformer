@@ -11,7 +11,6 @@ def parse():
     parser.add_argument('-load',action='store_true',help='load pretrained model')
     parser.add_argument('-train', action='store_true',help='whether train the model')
     parser.add_argument('-test', action='store_true',help='whether test')
-    parser.add_argument('-vanilla', action='store_true',help='use vanilla transformer')
     parser.add_argument('-valid_path',default='data/valid.txt',help='validation data path')
     parser.add_argument('-train_path',default='data/train.txt',help='training data path')
     parser.add_argument('-test_path',default='data/test.txt',help='testing data path')

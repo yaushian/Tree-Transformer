@@ -21,7 +21,6 @@ def attention(query, key, value, mask=None, dropout=None, group_prob=None):
         scores = scores.masked_fill((mask|b) == 0, -1e9)
     if group_prob is not None:
         p_attn = F.softmax(scores, dim = -1)
-        #print(p_attn[0,0,:5,:5])
         p_attn = p_attn*group_prob.unsqueeze(1)
     else:
         p_attn = F.softmax(scores, dim = -1)

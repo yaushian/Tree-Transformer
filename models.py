@@ -23,8 +23,7 @@ class Encoder(nn.Module):
             break_probs.append(break_prob)
 
         x = self.norm(x)
-        if break_probs[0] is not None:
-            break_probs = torch.stack(break_probs, dim=1)
+        break_probs = torch.stack(break_probs, dim=1)
         return self.proj(x),break_probs
 
 
@@ -33,7 +32,12 @@ class Encoder(nn.Module):
         return fn(out.view(-1, out.size()[-1]), y.view(-1))
 
 
+    def next_sentence_loss(self):
+        pass
+
+
 class EncoderLayer(nn.Module):
+    "Encoder is made up of self-attn and feed forward (defined below)"
     def __init__(self, size, self_attn, feed_forward, group_attn, dropout):
         super(EncoderLayer, self).__init__()
         self.self_attn = self_attn
@@ -43,10 +47,6 @@ class EncoderLayer(nn.Module):
         self.size = size
 
     def forward(self, x, mask, group_prob):
-        if self.group_attn is not None:
-            group_prob,break_prob = self.group_attn(x, mask, group_prob)
-        else:
-            group_prob = None
-            break_prob = None
+        group_prob,break_prob = self.group_attn(x, mask, group_prob)
         x = self.sublayer[0](x, lambda x: self.self_attn(x, x, x, group_prob, mask))
         return self.sublayer[1](x, self.feed_forward), group_prob, break_prob

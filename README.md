@@ -26,7 +26,7 @@ The default setting achieves F1 of approximatedly 49.1 on WSJ test set. The trai
 ## Evaluation
 For grammar induction testing:  
 ```python3 main.py -test -model_dir [model_dir]```  
-The code creates a result directory in model_dir. The result directory includes 'bracket.json' and 'tree.txt'. File 'bracket.json' contains the brackets of trees outputted from the model and they can be used for evaluating F1. The ground truth brackets of testing data can be obtained by using code of [on-lstm](https://github.com/yikangshen/Ordered-Neurons). File 'tree.txt' contains the parse trees.   
+The code creates a result directory in model_dir. The result directory includes 'bracket.json' and 'tree.txt'. File 'bracket.json' contains the brackets of trees outputted from the model and they can be used for evaluating F1. The ground truth brackets of testing data can be obtained by using code of [on-lstm](https://github.com/yikangshen/Ordered-Neurons). File 'tree.txt' contains the parse trees. The default testing file 'data/test.txt' is the tests of wsj_23.   
 
 ## Acknowledgements
 * Our code is mainly revised from [Annotated Transformer](http://nlp.seas.harvard.edu/2018/04/03/attention.html).  
