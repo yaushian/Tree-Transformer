@@ -21,7 +21,7 @@ We use BERT tokenizer from [PyTorch-Transformers](https://github.com/huggingface
 ## Training
 For grammar induction training:  
 ```python3 main.py -train -model_dir [model_dir] -num_step 60000```  
-The default setting achieves F1 of approximatedly 49.1 on WSJ test set. The training file 'data/train.txt' includes all WSJ data except 'WSJ_22 and WSJ_23'.   
+The default setting achieves F1 of approximatedly 49.5 on WSJ test set. The training file 'data/train.txt' includes all WSJ data except 'WSJ_22 and WSJ_23'.   
 
 ## Evaluation
 For grammar induction testing:  
