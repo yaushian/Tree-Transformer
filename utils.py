@@ -72,6 +72,7 @@ class data_utils():
     def __init__(self, args):
         self.seq_length = args.seq_length
         self.batch_size = args.batch_size
+        self.no_cuda = args.no_cuda
 
         self.dict_path = os.path.join(args.model_dir,'dictionary.json')
         self.train_path = args.train_path
@@ -219,7 +220,7 @@ class data_utils():
                     batch['y'].append(origin_vec)
 
                     if len(batch['input']) == self.batch_size:
-                        batch = {k: cc(v) for k, v in batch.items()}
+                        batch = {k: cc(v, self.no_cuda) for k, v in batch.items()}
                         yield batch
                         max_len = 0
                         batch = {'input':[],'input_mask':[],'target_vec':[],'y':[]}

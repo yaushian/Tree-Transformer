@@ -15,6 +15,7 @@ class Solver():
         self.args = args
 
         self.model_dir = make_save_dir(args.model_dir)
+        self.no_cuda = args.no_cuda
         if not os.path.exists(os.path.join(self.model_dir,'code')):
             os.makedirs(os.path.join(self.model_dir,'code'))
         
@@ -23,7 +24,6 @@ class Solver():
 
         self.test_vecs = None
         self.test_masked_lm_input = []
-        self.no_cuda = args.no_cuda
 
 
     def _make_model(self, vocab_size, N=10, 
@@ -116,8 +116,8 @@ class Solver():
 
         vecs = [self.data_utils.text2id(txt, 60) for txt in txts]
         masks = [np.expand_dims(v != 0, -2).astype(np.int32) for v in vecs]
-        self.test_vecs = cc(vecs).long()
-        self.test_masks = cc(masks)
+        self.test_vecs = cc(vecs, no_cuda=self.no_cuda).long()
+        self.test_masks = cc(masks, no_cuda=self.no_cuda)
         self.test_txts = txts
 
         self.write_parse_tree()
