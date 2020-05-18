@@ -31,14 +31,20 @@ def make_save_dir(save_dir):
 
 
 
-def cc(arr):
-    return torch.from_numpy(np.array(arr))#.cuda()
+def cc(arr, no_cuda=False):
+    if no_cuda:
+        return torch.from_numpy(np.array(arr))
+    else:
+        return torch.from_numpy(np.array(arr)).cuda()
 
 
-def one_hot(indices, depth):
+def one_hot(indices, depth, no_cuda=False):
     shape = list(indices.size())+[depth]
     indices_dim = len(indices.size())
-    a = torch.zeros(shape,dtype=torch.float)#.cuda()
+    if no_cuda:
+        a = torch.zeros(shape, dtype=torch.float)
+    else:
+        a = torch.zeros(shape,dtype=torch.float).cuda()
     return a.scatter_(indices_dim,indices.unsqueeze(indices_dim),1)
 
 

@@ -10,14 +10,17 @@ def clones(module, N):
     "Produce N identical layers."
     return nn.ModuleList([copy.deepcopy(module) for _ in range(N)])
 
-def attention(query, key, value, mask=None, dropout=None, group_prob=None):
+def attention(query, key, value, mask=None, dropout=None, group_prob=None, no_cuda=False):
     "Compute 'Scaled Dot Product Attention'"
     d_k = query.size(-1)
     scores = torch.matmul(query, key.transpose(-2, -1)) \
              / math.sqrt(d_k)
     if mask is not None:
         seq_len=query.size()[-2]
-        b = torch.from_numpy(np.diag(np.ones(seq_len, dtype=np.int32),0))#.cuda()
+        if no_cuda:
+            b = torch.from_numpy(np.diag(np.ones(seq_len, dtype=np.int32),0))
+        else:
+            b = torch.from_numpy(np.diag(np.ones(seq_len, dtype=np.int32), 0)).cuda()
         scores = scores.masked_fill((mask|b) == 0, -1e9)
     if group_prob is not None:
         p_attn = F.softmax(scores, dim = -1)
@@ -30,7 +33,7 @@ def attention(query, key, value, mask=None, dropout=None, group_prob=None):
 
 
 class MultiHeadedAttention(nn.Module):
-    def __init__(self, h, d_model, dropout=0.1):
+    def __init__(self, h, d_model, dropout=0.1, no_cuda=False):
         "Take in model size and number of heads."
         super(MultiHeadedAttention, self).__init__()
         assert d_model % h == 0
@@ -40,6 +43,7 @@ class MultiHeadedAttention(nn.Module):
         self.linears = clones(nn.Linear(d_model, d_model), 4)
         self.attn = None
         self.dropout = nn.Dropout(p=dropout)
+        self.no_cuda = no_cuda
         
     def forward(self, query, key, value, group_prob=None, mask=None):
         if mask is not None:
@@ -55,7 +59,7 @@ class MultiHeadedAttention(nn.Module):
         
         # 2) Apply attention on all the projected vectors in batch. 
         x, self.attn = attention(query, key, value, mask=mask, 
-                                 dropout=self.dropout, group_prob=group_prob)
+                                 dropout=self.dropout, group_prob=group_prob, no_cuda=self.no_cuda)
         
         # 3) "Concat" using a view and apply a final linear. 
         x = x.transpose(1, 2).contiguous() \
@@ -64,7 +68,7 @@ class MultiHeadedAttention(nn.Module):
 
 
 class GroupAttention(nn.Module):
-    def __init__(self, d_model, dropout=0.8):
+    def __init__(self, d_model, dropout=0.8, no_cuda=False):
         super(GroupAttention, self).__init__()
         self.d_model = 256.
         self.linear_key = nn.Linear(d_model, d_model)
@@ -72,16 +76,23 @@ class GroupAttention(nn.Module):
         #self.linear_output = nn.Linear(d_model, d_model)
         self.norm = LayerNorm(d_model)
         self.dropout = nn.Dropout(dropout)
+        self.no_cuda = no_cuda
 
     def forward(self, context, eos_mask, prior):
         batch_size,seq_len = context.size()[:2]
 
         context =self.norm(context)
 
-        a = torch.from_numpy(np.diag(np.ones(seq_len - 1, dtype=np.int32),1))#.cuda()
-        b = torch.from_numpy(np.diag(np.ones(seq_len, dtype=np.int32),0))#.cuda()
-        c = torch.from_numpy(np.diag(np.ones(seq_len - 1, dtype=np.int32),-1))#.cuda()
-        tri_matrix = torch.from_numpy(np.triu(np.ones([seq_len,seq_len], dtype=np.float32),0))#.cuda()
+        if self.no_cuda:
+            a = torch.from_numpy(np.diag(np.ones(seq_len - 1, dtype=np.int32),1))
+            b = torch.from_numpy(np.diag(np.ones(seq_len, dtype=np.int32),0))
+            c = torch.from_numpy(np.diag(np.ones(seq_len - 1, dtype=np.int32),-1))
+            tri_matrix = torch.from_numpy(np.triu(np.ones([seq_len,seq_len], dtype=np.float32),0))
+        else:
+            a = torch.from_numpy(np.diag(np.ones(seq_len - 1, dtype=np.int32),1)).cuda()
+            b = torch.from_numpy(np.diag(np.ones(seq_len, dtype=np.int32),0)).cuda()
+            c = torch.from_numpy(np.diag(np.ones(seq_len - 1, dtype=np.int32),-1)).cuda()
+            tri_matrix = torch.from_numpy(np.triu(np.ones([seq_len,seq_len], dtype=np.float32),0)).cuda()
 
         #mask = eos_mask & (a+c) | b
         mask = eos_mask & (a+c)

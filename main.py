@@ -3,6 +3,7 @@ from solver import Solver
 
 def parse():
     parser = argparse.ArgumentParser(description="tree transformer")
+    parser.add_argument('-no_cuda', action='store_true', help="Don't use GPUs.")
     parser.add_argument('-model_dir',default='train_model',help='output model weight dir')
     parser.add_argument('-seq_length', type=int, default=50, help='sequence length')
     parser.add_argument('-batch_size', type=int, default=64, help='batch size')

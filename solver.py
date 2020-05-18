@@ -23,6 +23,7 @@ class Solver():
 
         self.test_vecs = None
         self.test_masked_lm_input = []
+        self.no_cuda = args.no_cuda
 
 
     def _make_model(self, vocab_size, N=10, 
@@ -30,8 +31,8 @@ class Solver():
             
             "Helper: Construct a model from hyperparameters."
             c = copy.deepcopy
-            attn = MultiHeadedAttention(h, d_model)
-            group_attn = GroupAttention(d_model)
+            attn = MultiHeadedAttention(h, d_model, no_cuda=self.no_cuda)
+            group_attn = GroupAttention(d_model, no_cuda=self.no_cuda)
             ff = PositionwiseFeedForward(d_model, d_ff, dropout)
             position = PositionalEncoding(d_model, dropout)
             word_embed = nn.Sequential(Embeddings(d_model, vocab_size), c(position))
@@ -41,7 +42,10 @@ class Solver():
             for p in model.parameters():
                 if p.dim() > 1:
                     nn.init.xavier_uniform(p)
-            return model#.cuda()
+            if self.no_cuda:
+                return model
+            else:
+                return model.cuda()
 
 
     def train(self):
