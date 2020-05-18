@@ -41,7 +41,7 @@ class Solver():
             for p in model.parameters():
                 if p.dim() > 1:
                     nn.init.xavier_uniform(p)
-            return model.cuda()
+            return model#.cuda()
 
 
     def train(self):

@@ -10,7 +10,7 @@ from tqdm import tqdm
 import operator
 import torch.autograd as autograd
 from nltk.corpus import stopwords
-from pytorch_pretrained_bert import BertTokenizer
+from transformers import BertTokenizer
 import time
 
 def read_json(filename):
@@ -32,13 +32,13 @@ def make_save_dir(save_dir):
 
 
 def cc(arr):
-    return torch.from_numpy(np.array(arr)).cuda()
+    return torch.from_numpy(np.array(arr))#.cuda()
 
 
 def one_hot(indices, depth):
     shape = list(indices.size())+[depth]
     indices_dim = len(indices.size())
-    a = torch.zeros(shape,dtype=torch.float).cuda()
+    a = torch.zeros(shape,dtype=torch.float)#.cuda()
     return a.scatter_(indices_dim,indices.unsqueeze(indices_dim),1)
 
 

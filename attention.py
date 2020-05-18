@@ -17,7 +17,7 @@ def attention(query, key, value, mask=None, dropout=None, group_prob=None):
              / math.sqrt(d_k)
     if mask is not None:
         seq_len=query.size()[-2]
-        b = torch.from_numpy(np.diag(np.ones(seq_len, dtype=np.int32),0)).cuda()
+        b = torch.from_numpy(np.diag(np.ones(seq_len, dtype=np.int32),0))#.cuda()
         scores = scores.masked_fill((mask|b) == 0, -1e9)
     if group_prob is not None:
         p_attn = F.softmax(scores, dim = -1)
@@ -78,10 +78,10 @@ class GroupAttention(nn.Module):
 
         context =self.norm(context)
 
-        a = torch.from_numpy(np.diag(np.ones(seq_len - 1, dtype=np.int32),1)).cuda()
-        b = torch.from_numpy(np.diag(np.ones(seq_len, dtype=np.int32),0)).cuda()
-        c = torch.from_numpy(np.diag(np.ones(seq_len - 1, dtype=np.int32),-1)).cuda()
-        tri_matrix = torch.from_numpy(np.triu(np.ones([seq_len,seq_len], dtype=np.float32),0)).cuda()
+        a = torch.from_numpy(np.diag(np.ones(seq_len - 1, dtype=np.int32),1))#.cuda()
+        b = torch.from_numpy(np.diag(np.ones(seq_len, dtype=np.int32),0))#.cuda()
+        c = torch.from_numpy(np.diag(np.ones(seq_len - 1, dtype=np.int32),-1))#.cuda()
+        tri_matrix = torch.from_numpy(np.triu(np.ones([seq_len,seq_len], dtype=np.float32),0))#.cuda()
 
         #mask = eos_mask & (a+c) | b
         mask = eos_mask & (a+c)
