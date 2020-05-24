@@ -15,6 +15,7 @@ class Solver():
         self.args = args
 
         self.model_dir = make_save_dir(args.model_dir)
+        self.no_cuda = args.no_cuda
         if not os.path.exists(os.path.join(self.model_dir,'code')):
             os.makedirs(os.path.join(self.model_dir,'code'))
         
@@ -30,8 +31,8 @@ class Solver():
             
             "Helper: Construct a model from hyperparameters."
             c = copy.deepcopy
-            attn = MultiHeadedAttention(h, d_model)
-            group_attn = GroupAttention(d_model)
+            attn = MultiHeadedAttention(h, d_model, no_cuda=self.no_cuda)
+            group_attn = GroupAttention(d_model, no_cuda=self.no_cuda)
             ff = PositionwiseFeedForward(d_model, d_ff, dropout)
             position = PositionalEncoding(d_model, dropout)
             word_embed = nn.Sequential(Embeddings(d_model, vocab_size), c(position))
@@ -41,7 +42,10 @@ class Solver():
             for p in model.parameters():
                 if p.dim() > 1:
                     nn.init.xavier_uniform(p)
-            return model.cuda()
+            if self.no_cuda:
+                return model
+            else:
+                return model.cuda()
 
 
     def train(self):
@@ -112,8 +116,8 @@ class Solver():
 
         vecs = [self.data_utils.text2id(txt, 60) for txt in txts]
         masks = [np.expand_dims(v != 0, -2).astype(np.int32) for v in vecs]
-        self.test_vecs = cc(vecs).long()
-        self.test_masks = cc(masks)
+        self.test_vecs = cc(vecs, no_cuda=self.no_cuda).long()
+        self.test_masks = cc(masks, no_cuda=self.no_cuda)
         self.test_txts = txts
 
         self.write_parse_tree()

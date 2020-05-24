@@ -10,7 +10,7 @@ from tqdm import tqdm
 import operator
 import torch.autograd as autograd
 from nltk.corpus import stopwords
-from pytorch_pretrained_bert import BertTokenizer
+from transformers import BertTokenizer
 import time
 
 def read_json(filename):
@@ -31,14 +31,20 @@ def make_save_dir(save_dir):
 
 
 
-def cc(arr):
-    return torch.from_numpy(np.array(arr)).cuda()
+def cc(arr, no_cuda=False):
+    if no_cuda:
+        return torch.from_numpy(np.array(arr))
+    else:
+        return torch.from_numpy(np.array(arr)).cuda()
 
 
-def one_hot(indices, depth):
+def one_hot(indices, depth, no_cuda=False):
     shape = list(indices.size())+[depth]
     indices_dim = len(indices.size())
-    a = torch.zeros(shape,dtype=torch.float).cuda()
+    if no_cuda:
+        a = torch.zeros(shape, dtype=torch.float)
+    else:
+        a = torch.zeros(shape,dtype=torch.float).cuda()
     return a.scatter_(indices_dim,indices.unsqueeze(indices_dim),1)
 
 
@@ -66,6 +72,7 @@ class data_utils():
     def __init__(self, args):
         self.seq_length = args.seq_length
         self.batch_size = args.batch_size
+        self.no_cuda = args.no_cuda
 
         self.dict_path = os.path.join(args.model_dir,'dictionary.json')
         self.train_path = args.train_path
@@ -213,7 +220,7 @@ class data_utils():
                     batch['y'].append(origin_vec)
 
                     if len(batch['input']) == self.batch_size:
-                        batch = {k: cc(v) for k, v in batch.items()}
+                        batch = {k: cc(v, self.no_cuda) for k, v in batch.items()}
                         yield batch
                         max_len = 0
                         batch = {'input':[],'input_mask':[],'target_vec':[],'y':[]}
